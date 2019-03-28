@@ -63,28 +63,67 @@ def remove_anno_dup(args):
 def construct_dic(in_file):
 	with open(in_file,'r') as in_line:
 		in_lines=in_line.readlines()
-		pre_list=[i.strip().split() for i in in_lines]
+		pre_list=[i.strip().split('\t') for i in in_lines]
 		out_dic={}
 		for i in pre_list:
 			out_dic[i[0]]=i[1:]
 	return out_dic
 
-def merge_anno(args):
+def construct_list(in_file):
+	with open(in_file,'r') as in_line:
+		in_lines=in_line.readlines()
+		out_list=[i.strip().split('\t') for i in in_lines]
+		return out_list
+
+
+def merge_anno_list(args):
+	# construct list not dic 
+	gene_pair_list=construct_list(args.gene_pair_out)
 	# construct dict
-	gene_pair_dic=construct_dic(args.gene_pair_out)
 	anno_dic=construct_dic(args.anno_dedup_file)
+	final_list=[]
+	for i in gene_pair_list:
+		if i[0] in anno_dic.keys():
+			raw_i=i
+			raw_i.extend(anno_dic[i[0]])
+			final_list.append(raw_i)
+		else:
+			final_list.append(i)
 
-	for k,v in gene_pair_dic.items():
-		if k in anno_dic.keys():
-			raw_lst=v
-			raw_lst.extend(anno_dic[k])
-			gene_pair_dic[k]=raw_lst
+	with open(args.out_file,'w') as out:
+		for j in final_list:
+			out_line='\t'.join(j)
+			out.write(out_line)
+			out.write('\n')
 
-	write_dic_file(gene_pair_dic,args.out_file)
+# def merge_anno_list(gene_pair_list,anno_dic):
+# 	final_list=[]
+# 	for i in gene_pair_list:
+# 		if i[0] in anno_dic.keys():
+# 			raw_i=i
+# 			raw_i.extend(anno_dic[i[0]])
+# 			final_list.append(raw_i)
+# 		else:
+# 			final_list.append(i)
+# 	return final_list
 
+'''
+对于键值不唯一的不能使用字典，不然相同的会被去除掉
+'''
+# def merge_anno(args):
+# 	# construct dict
+# 	gene_pair_dic=construct_dic(args.gene_pair_out)
+# 	anno_dic=construct_dic(args.anno_dedup_file)
 
-# def set_work_path(args):
-# 	os.chdir(os.path.dirname(args.path))
+# 	for k,v in gene_pair_dic.items():
+# 		if k in anno_dic.keys():
+# 			raw_lst=v
+# 			raw_lst.extend(anno_dic[k])
+# 			gene_pair_dic[k]=raw_lst
+# 		else:
+# 			gene_pair_dic[k]=v
+
+# 	write_dic_file(gene_pair_dic,args.out_file)
 
 
 def main():
@@ -111,7 +150,7 @@ def main():
 	remove_anno_dup(args)
 
 	# out merge ano
-	merge_anno(args)
+	merge_anno_list(args)
 
 if __name__ == '__main__':
     main()
